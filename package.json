@@ -1,0 +1,24 @@
+{
+  "name": "rag-demo",
+  "version": "1.0.0",
+  "description": "企业制度 RAG 问答助手（Node.js + Express + 通义千问）",
+  "scripts": {
+    "start": "node rag-advanced.js",
+    "dev": "nodemon rag-advanced.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@langchain/textsplitters": "^1.0.1",
+    "axios": "^1.19.0",
+    "dompurify": "^3.4.13",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "langchain": "^1.5.4",
+    "marked": "^18.0.9"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
