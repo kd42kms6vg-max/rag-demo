@@ -59,7 +59,7 @@ rag-demo/
 │   └── vendor/         # 本地化前端依赖：marked.esm.js / purify.min.js
 ├── data/
 │   └── test.md         # 知识库文档（公司员工手册，8 节）
-├── .env                # DASHSCOPE_API_KEY（已 gitignore，勿提交）
+├── .env                # DASHSCOPE_API_KEY=你的Key（已 gitignore，勿提交）
 ├── package.json
 └── README.md
 ```
