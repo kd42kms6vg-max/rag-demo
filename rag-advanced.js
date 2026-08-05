@@ -306,8 +306,8 @@ app.get('/ai/reset', (req, res) => {
 });
 
 initKnowledgeBase().then(() => {
-  app.listen(PORT, () => {
-    console.log(`🚀 RAG 进阶服务已启动: http://localhost:${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 RAG 进阶服务已启动: http://0.0.0.0:${PORT}`);
     console.log('📝 已启用：混合检索(BM25+向量) + LLM重排序 + 多轮对话记忆');
   });
 });
