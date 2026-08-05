@@ -1,0 +1,36 @@
+edition: 3.0.0
+name: rag-demo
+access: default   # 由 `s config add` 配置的阿里云 AccessKey 别名
+
+resources:
+  rag-demo-fc:
+    component: fc3
+    props:
+      region: cn-hangzhou
+      functionName: rag-demo
+      description: '企业制度 RAG 问答助手 (Node.js + Express + 通义千问)'
+      runtime: custom            # 自定义运行时：直接 node 启动
+      cpu: 0.5
+      memorySize: 256
+      timeout: 60
+      diskSize: 512
+      instanceConcurrency: 1
+      environmentVariables:
+        DASHSCOPE_API_KEY: ${env.DASHSCOPE_API_KEY}   # 部署前在终端 export，切勿写死
+        PORT: '9000'
+      customRuntimeConfig:
+        command:
+          - node
+          - rag-advanced.js
+        port: 9000               # 必须与 PORT 环境变量一致
+      code:
+        src: ./
+      triggers:
+        - triggerName: httpTrigger
+          triggerType: http
+          qualifier: LATEST
+          triggerConfig:
+            authType: anonymous   # 允许匿名访问（公网可直接打开）
+            methods:
+              - GET
+              - POST

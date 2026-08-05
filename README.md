@@ -161,6 +161,26 @@ node rag-advanced.js
 
 > ⚠️ 注意：Render 免费 Web 服务空闲约 15 分钟后会休眠，首次访问有数秒冷启动，属正常现象；如需常驻请升级付费 plan。
 
+## 🚀 部署到阿里云函数计算 FC（国内 · 推荐）
+
+国内访问快、用支付宝扫码秒过实名，推荐用于面向国内面试官/演示的场景。
+
+1. 注册 [阿里云](https://www.aliyun.com) 账号并完成**实名认证**（支付宝扫码即可）。
+2. 开通 **函数计算 FC** 服务（控制台搜索「函数计算」）。
+3. 在本地安装 Serverless Devs 工具并配置 AccessKey：
+   ```bash
+   npm install -g @serverless-devs/s
+   s config add            # 按提示填阿里云 AccessKeyId / Secret（选 default 别名）
+   ```
+4. 导出 API Key 后部署（**切勿把 Key 写进代码**，走环境变量）：
+   ```bash
+   export DASHSCOPE_API_KEY=你的通义千问Key
+   s deploy                # 读取仓库根 s.yaml，自动打包并部署
+   ```
+5. 部署完成后，在 FC 控制台该函数下看到 **HTTP 触发器** 的公网地址（匿名访问），直接浏览器打开即可。
+
+> ⚠️ 说明：`s.yaml` 使用 `custom` 自定义运行时，直接 `node rag-advanced.js` 启动；服务监听 `0.0.0.0:9000`（端口由 `PORT` 环境变量控制）。`DASHSCOPE_API_KEY` 通过 `s.yaml` 的 `${env.DASHSCOPE_API_KEY}` 从本地终端注入，绝不进仓库。
+
 ---
 
 ## 📄 许可
