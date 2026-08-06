@@ -163,23 +163,38 @@ node rag-advanced.js
 
 ## 🚀 部署到阿里云函数计算 FC（国内 · 推荐）
 
-国内访问快、用支付宝扫码秒过实名，推荐用于面向国内面试官/演示的场景。
+国内访问快、支付宝扫码秒过实名，适合面向国内面试官/演示的场景。**整个部署只需你点几下 + 跑一条命令，密钥不会进仓库。**
 
-1. 注册 [阿里云](https://www.aliyun.com) 账号并完成**实名认证**（支付宝扫码即可）。
-2. 开通 **函数计算 FC** 服务（控制台搜索「函数计算」）。
-3. 在本地安装 Serverless Devs 工具并配置 AccessKey：
-   ```bash
-   npm install -g @serverless-devs/s
-   s config add            # 按提示填阿里云 AccessKeyId / Secret（选 default 别名）
-   ```
-4. 导出 API Key 后部署（**切勿把 Key 写进代码**，走环境变量）：
-   ```bash
-   export DASHSCOPE_API_KEY=你的通义千问Key
-   s deploy                # 读取仓库根 s.yaml，自动打包并部署
-   ```
-5. 部署完成后，在 FC 控制台该函数下看到 **HTTP 触发器** 的公网地址（匿名访问），直接浏览器打开即可。
+### 第 1 步：注册并实名
+1. 打开 https://www.aliyun.com ，用**支付宝扫码**注册。
+2. 按提示完成**实名认证**（支付宝授权即可，1 分钟）。
 
-> ⚠️ 说明：`s.yaml` 使用 `custom` 自定义运行时，直接 `node rag-advanced.js` 启动；服务监听 `0.0.0.0:9000`（端口由 `PORT` 环境变量控制）。`DASHSCOPE_API_KEY` 通过 `s.yaml` 的 `${env.DASHSCOPE_API_KEY}` 从本地终端注入，绝不进仓库。
+### 第 2 步：开通函数计算 FC + 拿 AccessKey
+1. 控制台搜索「**函数计算**」，进入后点「开通服务」。
+2. 打开 https://ram.console.aliyun.com → 左侧「**用户**」→「**创建用户**」。
+   - 登录名称填 `rag-deploy`（随意），访问方式勾选 **「使用永久 AccessKey」**。
+   - 创建后**立即复制保存** `AccessKeyId` 和 `AccessKeySecret`（只显示一次！）。
+   - 回到用户列表，给这个用户**添加权限**：搜 `AliyunFCFullAccess` 并授权（学生 demo 够用）。
+
+### 第 3 步：本地装工具并配置
+```bash
+npm install -g @serverless-devs/s
+s config add            # 选 default 别名，填上面的 AccessKeyId / Secret，region 选 cn-hangzhou
+```
+
+### 第 4 步：部署（一条命令）
+在 **项目根目录** `rag-demo/` 下执行：
+```bash
+export DASHSCOPE_API_KEY=你的通义千问Key   # 跟本地 .env 里那个一样
+s deploy                                  # 读 s.yaml，自动打包并部署
+```
+> ⚠️ `s deploy` 会把 `node_modules`（约 71MB）一起打包上传，首次约 1–3 分钟，耐心等。
+> 🔒 **安全**：`s.yaml` 已配置 `package.ignore` 排除 `.env`，你的 API Key **绝不会被上传到阿里云**；它只通过 FC 控制台的「环境变量」注入到函数运行时。
+
+### 第 5 步：拿到公网地址
+部署成功后终端会打印函数的 **HTTP 触发器公网地址**（形如 `https://<随机>.cn-hangzhou.fcapp.run`）。浏览器直接打开即可使用。
+
+> 💡 说明：`s.yaml` 用 `custom` 自定义运行时，直接 `node rag-advanced.js` 启动，监听 `0.0.0.0:9000`（端口由 `PORT` 环境变量控制）。FC 按量计费、有免费额度；长时间无访问会有冷启动（首次打开慢几秒），面试演示前先点一下唤醒即可。
 
 ---
 
