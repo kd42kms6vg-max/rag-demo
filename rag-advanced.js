@@ -9,7 +9,7 @@ const { RecursiveCharacterTextSplitter } = require('@langchain/textsplitters');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 9000;
 const DASHSCOPE_BASE = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 
 let vectorStore = [];   // 向量库：[{ text, vector, source, tf, len }]
