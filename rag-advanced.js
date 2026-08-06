@@ -5,7 +5,6 @@
 const express = require('express');
 const axios = require('axios');
 const fs = require('fs');
-const { RecursiveCharacterTextSplitter } = require('@langchain/textsplitters');
 require('dotenv').config();
 
 const app = express();
@@ -196,23 +195,50 @@ function buildMessages(context, question) {
 // ============================================================
 // 启动时：加载文档 → 分块 → 向量化 → 构建 BM25（只做一次）
 // ============================================================
+// 轻量中文分块：优先按章节标题（#）切分，过长段落再按字符窗口切，保留重叠
+function chunkText(text, chunkSize = 300, overlap = 50) {
+  const paragraphs = text
+    .split(/\n+/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+
+  const chunks = [];
+  let current = '';
+  for (const para of paragraphs) {
+    const isHeader = /^#{1,3}\s/.test(para);
+    if (isHeader) {
+      if (current) {
+        chunks.push(current);
+        current = '';
+      }
+      current = para; // 标题自成块开头
+      continue;
+    }
+    const candidate = current ? current + '\n' + para : para;
+    if (candidate.length > chunkSize && current) {
+      chunks.push(current);
+      const tail = current.slice(-overlap);
+      current = tail + '\n' + para;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) chunks.push(current);
+  return chunks.filter((c) => c.trim().length > 0);
+}
+
 async function initKnowledgeBase() {
   console.log('📚 正在加载文档并构建向量库...');
   const text = fs.readFileSync('./data/test.md', 'utf-8');
 
-  const splitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 300,
-    chunkOverlap: 50,
-    separators: ['\n## ', '\n# ', '\n', '。', '.', ' '],
-  });
-  const chunks = await splitter.createDocuments([text], [{ source: 'test.md' }]);
+  const rawChunks = chunkText(text, 300, 50);
 
-  for (const chunk of chunks) {
-    const vector = await getEmbedding(chunk.pageContent);
-    vectorStore.push({ text: chunk.pageContent, vector, source: chunk.metadata.source });
+  for (const c of rawChunks) {
+    const vector = await getEmbedding(c);
+    vectorStore.push({ text: c, vector, source: 'test.md' });
   }
   buildBM25();
-  console.log(`✅ 知识库就绪：${vectorStore.length} 个文档块（混合检索 + 重排序已启用）`);
+  console.log(`✅ 知识库就绪：${rawChunks.length} 个文档块（混合检索 + 重排序已启用）`);
 }
 
 // ============================================================
@@ -275,7 +301,8 @@ app.get('/ai/rag/stream', async (req, res) => {
       }
       try {
         const json = JSON.parse(payload);
-        const delta = json.choices?.[0]?.delta?.content;
+        const choice = json.choices && json.choices[0];
+        const delta = choice && choice.delta && choice.delta.content;
         if (delta) {
           fullAnswer += delta;
           res.write(`data: ${JSON.stringify({ type: 'content', content: delta })}\n\n`);
