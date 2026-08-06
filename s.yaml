@@ -25,6 +25,19 @@ resources:
         port: 9000               # 必须与 PORT 环境变量一致
       code:
         src: ./
+      package:
+        # 打包时排除以下文件，防止 .env 里的真实 API Key 被上传到阿里云
+        ignore:
+          - .env
+          - .git
+          - .gitignore
+          - '*.log'
+          - server.js          # Step2 开发残留，无需部署
+          - chunker.js         # Step3 开发残留
+          - embeddings.js      # Step4 开发残留
+          - rag.js             # Step5 开发残留
+          - rag-stream.js      # Step6 开发残留
+          - 演示视频脚本.md     # 交付物，不必进运行包
       triggers:
         - triggerName: httpTrigger
           triggerType: http
