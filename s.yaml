@@ -9,6 +9,7 @@ resources:
       region: cn-hangzhou
       functionName: rag-demo
       description: '企业制度 RAG 问答助手 (Node.js + Express + 通义千问)'
+      handler: index.handler   # custom 运行时占位字段（FC 忽略，但 schema 必填）
       runtime: custom            # 自定义运行时：直接 node 启动
       cpu: 0.5
       memorySize: 256
