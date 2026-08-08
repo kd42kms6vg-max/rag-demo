@@ -373,10 +373,21 @@
       applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
     });
 
-    // 新对话：清空后端对话记忆并刷新界面
+    // 会话 ID：每标签页独立（sessionStorage），解决多设备/多用户对话串台
+    let sessionId = sessionStorage.getItem('rag-session');
+    if (!sessionId) {
+      sessionId = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      try { sessionStorage.setItem('rag-session', sessionId); } catch (e) {}
+    }
+
+    // 新对话：轮换会话 ID（旧会话在后端被孤立弃用，不会污染新会话），刷新界面
+    // 说明：Vercel 上 api/rag.js 与 api/reset.js 是独立函数、内存不共享，
+    // 因此"重置"只能在客户端轮换 sid 实现，而非跨函数清内存。
     const resetBtn = document.getElementById('resetBtn');
     resetBtn.addEventListener('click', () => {
-      fetch('/ai/reset').then(() => location.reload()).catch(() => location.reload());
+      sessionId = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      try { sessionStorage.setItem('rag-session', sessionId); } catch (e) {}
+      location.reload();
     });
 
     // 创建一个问答段落，返回需要更新的节点
@@ -426,7 +437,7 @@
       const node = createExchange(question);
       conversation.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
-      const evtSource = new EventSource(`/ai/rag/stream?question=${encodeURIComponent(question)}`);
+      const evtSource = new EventSource(`/ai/rag/stream?question=${encodeURIComponent(question)}&sid=${encodeURIComponent(sessionId)}`);
 
       evtSource.onmessage = (e) => {
         if (e.data === '[DONE]') {
@@ -436,6 +447,13 @@
         }
         try {
           const obj = JSON.parse(e.data);
+          if (obj.type === 'status') {
+            // 状态消息（如"正在初始化知识库…"）：只更新状态栏，不混入答案
+            if (node.status) {
+              node.status.textContent = obj.content;
+            }
+            return;
+          }
           if (obj.type === 'content') {
             // 首字到达：移除"检索中"状态
             if (node.status && node.status.parentNode) {

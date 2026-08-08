@@ -1,20 +1,10 @@
 {
   "name": "rag-demo",
   "version": "1.0.0",
-  "description": "企业制度 RAG 问答助手（Node.js + Express + 通义千问）",
-  "scripts": {
-    "start": "node rag-advanced.js",
-    "dev": "nodemon rag-advanced.js"
-  },
+  "description": "企业制度 RAG 智能问答助手",
+  "private": true,
+  "dependencies": {},
   "engines": {
-    "node": ">=22"
-  },
-  "dependencies": {
-    "axios": "^1.19.0",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.14"
+    "node": ">=16"
   }
 }
