@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/ai/rag/stream", "destination": "/api/rag" },
+    { "source": "/ai/reset", "destination": "/api/reset" },
+    { "source": "/health", "destination": "/api/health" }
+  ]
+}
