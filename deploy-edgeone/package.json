@@ -1,0 +1,7 @@
+{
+  "name": "rag-demo-edgeone",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "企业制度 RAG 智能问答助手 - EdgeOne Pages 部署版"
+}
