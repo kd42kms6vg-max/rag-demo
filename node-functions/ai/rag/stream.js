@@ -142,9 +142,11 @@ async function llmRerank(question, candidates) {
   } catch (e) { return candidates.slice(0, 3); }
 }
 
-// ── 混合检索 ──
+// ── 混合检索（分段计时：向量化 / 混合打分 / LLM 重排，供前端性能指标展示）──
 async function retrieve(question) {
+  const t0 = Date.now();
   const qv = await getEmbedding(question);
+  const embedMs = Date.now() - t0;
   const qt = tokenize(question);
   const scored = vectorStore.map((d) => ({ doc: d, cos: cosineSimilarity(qv, d.vector), bm: bm25Score(qt, d) }));
   const cMin = Math.min(...scored.map((s) => s.cos)); const cMax = Math.max(...scored.map((s) => s.cos));
@@ -152,7 +154,11 @@ async function retrieve(question) {
   scored.forEach((s) => { s.hybrid = 0.6 * (cMax > cMin ? (s.cos - cMin) / (cMax - cMin) : 0) + 0.4 * (bMax > bMin ? (s.bm - bMin) / (bMax - bMin) : 0); });
   scored.sort((a, b) => b.hybrid - a.hybrid);
   const cands = scored.slice(0, 6).map((s) => ({ text: s.doc.text, source: s.doc.source, score: parseFloat(s.hybrid.toFixed(4)) }));
-  return llmRerank(question, cands).then((r) => r.slice(0, 3));
+  const hybridMs = Date.now() - t0 - embedMs;
+  const t1 = Date.now();
+  const docs = (await llmRerank(question, cands)).slice(0, 3);
+  const rerankMs = Date.now() - t1;
+  return { docs, timing: { embedMs, hybridMs, rerankMs, totalMs: Date.now() - t0 } };
 }
 
 // ── 构建消息 ──
@@ -195,8 +201,11 @@ export async function onRequest(context) {
       try {
         if (!kbReady) { send({ type: 'status', content: '正在初始化知识库，请稍候…' }); initKB(); }
 
-        const topK = await retrieve(question);
+        const { docs: topK, timing } = await retrieve(question);
         const THRESHOLD = 0.12;
+        // RAG 可解释性事件：检索性能指标 + 命中片段（拒答时也发，让前端能展示"为什么拒答"）
+        send({ type: 'stats', embedMs: timing.embedMs, hybridMs: timing.hybridMs, rerankMs: timing.rerankMs, totalMs: timing.totalMs });
+        send({ type: 'sources', sources: topK.map((d, i) => ({ no: i + 1, score: d.score, excerpt: d.text.slice(0, 72).replace(/\s+/g, ' ') })) });
         if (topK.length === 0 || topK[0].score < THRESHOLD) {
           send({ type: 'content', content: '不好意思呀，我正在学习更多技能呢，您可以联系人工客服询问哦' });
           done();

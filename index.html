@@ -310,6 +310,81 @@
     .composer button:hover { transform: translateY(-1px); }
     .composer button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
+    /* ── 技术栈徽章行 ── */
+    .stack-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 1.1rem;
+    }
+    .stack-badges span {
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      padding: 0.25rem 0.7rem;
+      letter-spacing: 0.02em;
+      background: color-mix(in oklch, var(--surface) 60%, transparent);
+    }
+
+    /* ── 检索性能指标行（RAG 可解释性）── */
+    .exchange-meta {
+      display: none;
+      margin-top: 0.9rem;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 0.78rem;
+      color: var(--ink-faint);
+      letter-spacing: 0.01em;
+    }
+    .exchange-meta.show { display: block; }
+
+    /* ── 引用来源卡片 ── */
+    .sources {
+      display: none;
+      margin-top: 0.7rem;
+      border-left: 2px solid var(--rule);
+      padding-left: 0.9rem;
+    }
+    .sources.show { display: block; }
+    .sources-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--ink-soft);
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.02em;
+    }
+    .source-item {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      margin: 0.35rem 0;
+      font-size: 0.85rem;
+    }
+    .source-score {
+      flex-shrink: 0;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 0.72rem;
+      color: var(--accent);
+      background: color-mix(in oklch, var(--accent) 8%, transparent);
+      border: 1px solid color-mix(in oklch, var(--accent) 30%, transparent);
+      border-radius: 4px;
+      padding: 0.05rem 0.4rem;
+      white-space: nowrap;
+    }
+    .source-excerpt { color: var(--ink-soft); line-height: 1.6; }
+
+    /* ── 页脚技术署名 ── */
+    .site-footer {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 clamp(1.25rem, 5vw, 2.5rem);
+      font-size: 0.72rem;
+      color: var(--ink-faint);
+      text-align: center;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      letter-spacing: 0.06em;
+    }
+
     @media (max-width: 540px) {
       .query { font-size: 1.15rem; }
       .masthead-actions { position: static; display: flex; margin-top: 1rem; }
@@ -320,9 +395,15 @@
 <body>
   <main class="shell">
     <header class="masthead">
-      <div class="kicker">智能问答助手</div>
+      <div class="kicker">RAG · Enterprise Knowledge</div>
       <h1>有什么可以帮您？</h1>
       <p class="lede">基于公司制度手册，为您解答考勤、请假、福利等相关问题。</p>
+      <div class="stack-badges">
+        <span>SSE 流式问答</span>
+        <span>BM25 × 向量混合检索</span>
+        <span>LLM 重排 Top-6→3</span>
+        <span>EdgeOne Node Functions</span>
+      </div>
       <div class="masthead-actions">
         <button class="theme-toggle" id="resetBtn">新对话</button>
         <button class="theme-toggle" id="themeToggle">深色模式</button>
@@ -339,6 +420,8 @@
         </div>
       </div>
     </section>
+
+    <footer class="site-footer">RAG PIPELINE · QWEN-PLUS · TEXT-EMBEDDING-V3 · EDGEONE MAKERS</footer>
   </main>
 
   <form class="composer" id="composer">
@@ -412,13 +495,44 @@
       caret.className = 'caret';
       answerText.appendChild(caret);
 
+      const meta = document.createElement('div');
+      meta.className = 'exchange-meta';
+
+      const sourcesBox = document.createElement('div');
+      sourcesBox.className = 'sources';
+
       answer.appendChild(status);
       answer.appendChild(answerText);
+      answer.appendChild(meta);
+      answer.appendChild(sourcesBox);
       section.appendChild(q);
       section.appendChild(answer);
       conversation.appendChild(section);
 
-      return { answer, answerText, caret, status, md: '' };
+      return { answer, answerText, caret, status, meta, sourcesBox, md: '' };
+    }
+
+    // 渲染引用来源卡片：命中片段编号 + 混合检索得分 + 摘录（RAG 可解释性）
+    function renderSources(box, sources) {
+      if (!box || !sources || !sources.length) return;
+      const title = document.createElement('div');
+      title.className = 'sources-title';
+      title.textContent = '引用的知识库片段';
+      box.appendChild(title);
+      sources.forEach((s) => {
+        const item = document.createElement('div');
+        item.className = 'source-item';
+        const badge = document.createElement('span');
+        badge.className = 'source-score';
+        badge.textContent = '片段' + s.no + ' · ' + Number(s.score).toFixed(2);
+        const text = document.createElement('span');
+        text.className = 'source-excerpt';
+        text.textContent = s.excerpt + '…';
+        item.appendChild(badge);
+        item.appendChild(text);
+        box.appendChild(item);
+      });
+      box.classList.add('show');
     }
 
     let streaming = false;
@@ -466,7 +580,17 @@
             node.answerText.appendChild(node.caret);
             conversation.scrollIntoView({ behavior: 'smooth', block: 'end' });
           }
-          // sources 事件不再渲染（用户不需要看来源/相似度）
+          if (obj.type === 'stats') {
+            // 检索性能指标：向量化 / 混合打分 / LLM 重排分段耗时（等宽小字，挂在回答下方）
+            node.meta.textContent = '检索 ' + obj.totalMs + 'ms · 向量化 ' + obj.embedMs + 'ms · 混合打分 ' + obj.hybridMs + 'ms · LLM重排 ' + obj.rerankMs + 'ms · Top-6→3';
+            node.meta.classList.add('show');
+            return;
+          }
+          if (obj.type === 'sources') {
+            // 引用来源：命中片段 + 混合检索得分（拒答时同样展示，解释"为什么答不上"）
+            renderSources(node.sourcesBox, obj.sources);
+            return;
+          }
         } catch (err) { /* 忽略偶发解析错误 */ }
       };
 
