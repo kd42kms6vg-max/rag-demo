@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>知识库问答 · RAG</title>
+  <title>知了 · 企业制度智能问答</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500&family=Noto+Serif+SC:wght@500;600&display=swap" rel="stylesheet" />
@@ -395,14 +396,13 @@
 <body>
   <main class="shell">
     <header class="masthead">
-      <div class="kicker">RAG · Enterprise Knowledge</div>
-      <h1>有什么可以帮您？</h1>
-      <p class="lede">基于公司制度手册，为您解答考勤、请假、福利等相关问题。</p>
+      <div class="kicker">Zhiliao · Enterprise Policy Assistant</div>
+      <h1>知了 · 企业制度智能问答</h1>
+      <p class="lede">考勤、假期、薪酬、审批流程，问一句就有答案。所有回答均引自公司制度手册原文，可溯源、可追问。</p>
       <div class="stack-badges">
-        <span>SSE 流式问答</span>
-        <span>BM25 × 向量混合检索</span>
-        <span>LLM 重排 Top-6→3</span>
-        <span>EdgeOne Node Functions</span>
+        <span>回答引自制度原文</span>
+        <span>流式秒回</span>
+        <span>支持多轮追问</span>
       </div>
       <div class="masthead-actions">
         <button class="theme-toggle" id="resetBtn">新对话</button>
@@ -421,7 +421,7 @@
       </div>
     </section>
 
-    <footer class="site-footer">RAG PIPELINE · QWEN-PLUS · TEXT-EMBEDDING-V3 · EDGEONE MAKERS</footer>
+    <footer class="site-footer">知了 Zhiliao · 智能制度问答 · 回答由 AI 基于公司制度手册生成，请以正式文件为准</footer>
   </main>
 
   <form class="composer" id="composer">
