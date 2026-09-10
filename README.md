@@ -1,7 +1,10 @@
 # 企业制度 RAG 问答助手
 
 > 面向**企业内部制度问答**的检索增强生成（RAG）演示项目，已部署上线。
-> 技术栈：**Node.js + Vercel Serverless Functions + 通义千问（DashScope）**。
+>
+> **🌐 在线体验：<https://rag-demo-v2.icu>**（自定义域名 + HTTPS）
+>
+> 技术栈：**Node.js + 通义千问（DashScope）**，主部署于腾讯云 **EdgeOne Pages**（另含 Vercel Serverless 版）。
 > 用途：学习 RAG 全链路，并作为求职作品集（广深方向：前端友好 / AI 应用岗）。
 
 ---
@@ -21,6 +24,8 @@
 | **RAG 检索增强** | 分块 → 向量化 → 混合检索(BM25+向量) → LLM 重排序 → 生成答案 |
 | **混合检索** | 向量语义检索（懂同义）+ BM25 词法检索（精确词），归一化加权融合（0.6 / 0.4） |
 | **LLM 重排序** | 候选段落交给 `qwen-plus` 精排 Top-3，提升准确率（RAG 工程标配） |
+| **可溯源引用** | 每条回答附 Top-3 命中片段与混合检索得分；**拒答时同样展示**，能解释"为什么答不上" |
+| **检索耗时透明** | SSE 实时推送向量化 / 混合打分 / LLM 重排的分段耗时，检索全程可观测 |
 | **多轮对话记忆** | 每个会话独立保留最近 6 轮，支持追问与指代消解（"那病假呢"） |
 | **会话隔离** | 按 `sessionId` 隔离对话历史，多用户 / 多设备**不串台** |
 | **流式输出（SSE）** | 打字机效果，体验更顺 |
@@ -35,7 +40,7 @@
 
 ## 🧱 技术栈
 
-- **运行时**：Node.js 22+（**Vercel Serverless Functions**，无 Express、无 LangChain）
+- **运行时**：Node.js 22+（Serverless Functions：EdgeOne / Vercel，无 Express、无 LangChain）
 - **大模型**：通义千问 DashScope
   - 对话：`qwen-plus`
   - 向量：`text-embedding-v3`（1024 维）
@@ -43,7 +48,7 @@
   - HTTP 调用：Node 内置 `https` 模块（**零额外网络依赖**）
 - **前端**：原生 HTML / CSS / JS；`marked`（ESM）+ `DOMPurify`（UMD）本地化到 `public/vendor/`，**不依赖 CDN**
 - **流式协议**：SSE + 浏览器 `EventSource`
-- **部署**：Vercel（`vercel.json` 路由重写）
+- **部署**：腾讯云 **EdgeOne Pages**（当前线上，自定义域名 `rag-demo-v2.icu`）；`api/` 目录保留 **Vercel Serverless** 版本（`vercel.json` 路由重写）
 
 ---
 
@@ -51,18 +56,21 @@
 
 ```
 rag-demo/
-├── api/
-│   ├── rag.js            # 主服务：SSE 流式 RAG 问答（混合检索+重排序+记忆+安全设计）
-│   ├── reset.js          # 重置指定会话历史
-│   ├── health.js         # 健康检查
+├── index.html            # 聊天界面（书卷风，Markdown 渲染，明暗主题）← 线上使用
+├── vendor/               # 本地化前端依赖：marked.esm.js / purify.min.js（线上使用）
+├── node-functions/       # EdgeOne Pages Node Functions（当前线上运行）
+│   └── ai/rag/
+│       └── stream.js     # 主服务：SSE 流式 RAG 问答（混合检索+重排序+记忆+安全设计）
+├── api/                  # Vercel Serverless 版（功能相同）
+│   ├── rag.js / reset.js / health.js
 │   └── _lib/
 │       └── sessions.js   # 按 sessionId 隔离对话历史（解决多设备串台）
-├── public/
-│   ├── index.html        # 聊天界面（书卷风，Markdown 渲染，明暗主题）
-│   └── vendor/           # 本地化前端依赖：marked.esm.js / purify.min.js
+├── public/               # Vercel 版静态资源
+│   ├── index.html
+│   └── vendor/
 ├── data/
 │   └── test.md           # 知识库文档（公司员工手册，8 节）
-├── vercel.json           # 路由重写：/ai/rag/stream → /api/rag 等
+├── vercel.json           # Vercel 路由重写：/ai/rag/stream → /api/rag 等
 ├── package.json
 └── README.md
 ```
@@ -84,7 +92,22 @@ export DASHSCOPE_API_KEY=你的_api_key      # macOS / Linux
 vercel dev                                 # 本地启动，访问 http://localhost:3000
 ```
 
-### 2. 部署到 Vercel（推荐，公网可访问）
+### 2. 部署到腾讯云 EdgeOne Pages（当前线上方式）
+
+在 [EdgeOne 控制台](https://console.cloud.tencent.com/edgeone/makers) 连接 GitHub 仓库，构建配置：
+
+| 配置项 | 值 |
+|--------|-----|
+| 构建命令 | 留空 |
+| 输出目录 | `./` |
+| 环境变量 | `DASHSCOPE_API_KEY` |
+
+`node-functions/` 目录自动识别为 Node Functions（SSE 流式端点）；绑定自定义域名后免费 HTTPS 证书自动签发。
+
+> ⚠️ 未备案站点加速区域需选「全球可用区（不含中国大陆）」，国内访问存在跨境延迟（首屏实测 1~2s）；完成 ICP 备案后可切国内节点根治。
+
+<details>
+<summary>备选：部署到 Vercel</summary>
 
 ```bash
 vercel              # 首次：登录 + 链接项目
@@ -92,8 +115,9 @@ vercel --prod       # 部署到生产环境
 ```
 
 部署后在 **Vercel Dashboard → Settings → Environment Variables** 添加 `DASHSCOPE_API_KEY`。
+`*.vercel.app` 在中国大陆需 **VPN** 访问。
 
-> ⚠️ `*.vercel.app` 在中国大陆需 **VPN** 访问；如需国内直连，可绑自定义域名或改用国内平台（如阿里云函数计算 / 腾讯云函数）。
+</details>
 
 ### 3. 使用
 
@@ -126,6 +150,8 @@ vercel --prod       # 部署到生产环境
 - 事件类型：
   - `data: {"type":"status","content":"..."}` —— 状态提示（如"正在初始化知识库"），前端单独渲染，**不混入答案**
   - `data: {"type":"content","content":"..."}` —— 逐字内容（打字机）
+  - `data: {"type":"stats","embedMs":...,"hybridMs":...,"rerankMs":...,"totalMs":...}` —— 检索分段耗时
+  - `data: {"type":"sources","sources":[{"no":1,"score":0.87,"excerpt":"..."}]}` —— Top-3 命中片段与得分（拒答时也发送）
   - `data: [DONE]` —— 结束
 - `sid` 不传或为空时回退到 `anonymous`（所有匿名用户共享同一会话）；**正式使用务必传唯一 sid**
 
@@ -135,7 +161,7 @@ vercel --prod       # 部署到生产环境
 
 ### `GET /health`
 
-- 返回 `{"ok":true,"kbReady":false,...}`
+- 返回 `{"ok":true,"ts":...,"hasKey":true}`（服务存活 / 时钟正常 / API Key 已配置）；Vercel 版返回含 `kbReady`
 
 ---
 
@@ -148,7 +174,7 @@ vercel --prod       # 部署到生产环境
 | 5 | RAG 完整链路（检索 → 拼 Prompt → 生成 + 防幻觉） |
 | 6 | 前端页面 + 流式输出 + 书卷风设计 |
 | 7 | 混合检索 + LLM 重排序 + 多轮记忆 + 会话隔离 + 产品化安全设计 |
-| 8 | 部署（Vercel）+ README + 演示视频 |
+| 8 | 部署（EdgeOne Pages + 自定义域名）+ README + 演示视频 |
 
 ---
 
