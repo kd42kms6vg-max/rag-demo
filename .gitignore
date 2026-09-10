@@ -45,3 +45,4 @@ npm-debug.log*
 # ── 构建日志 / 旧代码归档（不进版本库）──
 deploy.log
 _archive/
+.workbuddy/
