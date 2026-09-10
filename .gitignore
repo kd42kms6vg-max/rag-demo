@@ -46,3 +46,15 @@ npm-debug.log*
 deploy.log
 _archive/
 .workbuddy/
+
+# ── 本地草稿（仅存本地，不纳入版本库）──
+/*.md
+!/README.md
+
+# ── 已移除的残留（本地保留但不跟踪，确认无用可直接删除本地文件）──
+deploy-edgeone/
+pom.xml
+mvnw
+mvnw.cmd
+.mvn/
+src/
