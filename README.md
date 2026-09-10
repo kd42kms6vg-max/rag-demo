@@ -56,7 +56,7 @@
 
 ```
 rag-demo/
-├── index.html            # 聊天界面（书卷风，Markdown 渲染，明暗主题）← 线上使用
+├── index.html            # 聊天界面（新中式留白风，Markdown 渲染，明暗主题）← 线上使用
 ├── vendor/               # 本地化前端依赖：marked.esm.js / purify.min.js（线上使用）
 ├── node-functions/       # EdgeOne Pages Node Functions（当前线上运行）
 │   └── ai/rag/

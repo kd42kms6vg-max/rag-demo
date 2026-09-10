@@ -46,3 +46,17 @@ npm-debug.log*
 deploy.log
 _archive/
 .workbuddy/
+
+# ── 个人笔记与求职准备材料（本地保留，不随代码公开）──
+JAVA实习备考进度.md
+RAG方案_面试讲解与简历素材.md
+RAG项目复盘总结.md
+演示视频脚本.md
+
+# ── 已移除的残留（本地保留但不跟踪，确认无用可直接删除本地文件）──
+deploy-edgeone/
+pom.xml
+mvnw
+mvnw.cmd
+.mvn/
+src/
